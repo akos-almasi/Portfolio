@@ -1,6 +1,6 @@
 # Data Engineering SQL project
 
-A quick overview what I did in the Term 1 project.
+A quick overview what I did in the SQL project.
 
 Tablef1 datawarehouse have been created by joining five tables through stored procedures, which is there to help us analyze the performance of the drivers. I created an ETL pipeline for the datawarehouse and for the datamarts as well.
 
@@ -10,7 +10,7 @@ Tablef1 datawarehouse have been created by joining five tables through stored pr
 
 
 ## Dataset
-I chose a formula one dataset to deliver the Term1 Project. 
+I chose a formula one dataset to deliver the SQL Project. 
 The dataset can be downloaded from the following website: https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020
 
 ## Operational layer
