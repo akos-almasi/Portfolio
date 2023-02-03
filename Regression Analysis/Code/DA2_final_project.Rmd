@@ -1,0 +1,326 @@
+---
+title: "DA2 Final Project"
+author: "Akos Almasi"
+date: "2022-12-15"
+output:
+  pdf_document:
+    extra_dependencies: float
+geometry: margin=1.5cm
+urlcolor: blue
+---
+
+```{r, echo=FALSE , warning=FALSE , message=FALSE}
+### Libraries used for the project
+library(modelsummary)
+library(kableExtra)
+library(tidyverse)
+library(data.table)
+library(fixest)
+library(ggpubr)
+library(gridExtra)
+library(lspline)
+```
+
+
+```{r, echo=FALSE , warning=FALSE , message=FALSE}
+### Read the csv files in a data.table format
+employment_rate <- data.table(read.csv("https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/employment_rate.csv"))
+job_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/job_satisfaction.csv'))
+relationship_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/relationship_satisfaction.csv'))
+life_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/life_satisfaction.csv'))
+```
+
+## Introduction
+
+In the EU in 2020, around 40% of 30-35 year olds will have completed tertiary education. Higher educational attainment leads to better job prospects and higher wages, which can enable people to consume more and better quality goods and services. These conditions suggest that a happier life can be achieved.  But the 40% suggests that more than half of this age group do not have the same opportunities as graduates. This report aims to find out if this is true and to analyse the impact of educational attainment on life satisfaction in the EU. My question: Is life satisfaction only a matter of educational attainment and the standard of living it generates? Will we be unhappy if we don't learn?
+
+## Data
+In order to adequately assess life satisfaction, I have first determined the areas through which I will test life satisfaction in certain education levels. These were job satisfaction, employment rate, relationship satisfaction and life satisfaction, for which I used four different data sources from the [Eurostat](https://ec.europa.eu/eurostat/web/main/data/database?p_p_id=NavTreeportletprod_WAR_NavTreeportletprod_INSTANCE_nPqeVbPXRmWQ&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view) website to examine my question.
+
+
+```{r, echo=FALSE , warning=FALSE , message=FALSE}
+### Data cleaning
+############### job_satisfaction table ###############
+# Drop and rename columns
+job_satisfaction <- subset(job_satisfaction, select = -c(DATAFLOW, LAST.UPDATE, TIME_PERIOD, OBS_FLAG, age, sex, freq, unit, indic_wb))
+job_satisfaction <- job_satisfaction %>% 
+            rename("edu_level" = "isced11",
+                   "country" = "geo",
+                  "job_sat_rating" = "OBS_VALUE")
+
+############### employment_rate table ###############
+# Drop and rename columns
+employment_rate <- subset(employment_rate, select = -c(DATAFLOW, LAST.UPDATE, sex, age, TIME_PERIOD, OBS_FLAG, freq, unit))
+employment_rate <- employment_rate %>% 
+            rename("edu_level" = "isced11",
+                   "country" = "geo",
+                  "employment_rate_pct" = "OBS_VALUE")
+
+############### life_satisfaction table ###############
+# Drop and rename columns
+life_satisfaction <- subset(life_satisfaction, select = -c(DATAFLOW, LAST.UPDATE, sex, age, TIME_PERIOD, OBS_FLAG, freq, unit, indic_wb))
+life_satisfaction <- life_satisfaction %>% 
+            rename("edu_level" = "isced11",
+                   "country" = "geo",
+                  "life_sat_rating" = "OBS_VALUE")
+
+############### relationship_satisfaction table ###############
+relationship_satisfaction <- subset(relationship_satisfaction, select = -c(DATAFLOW, LAST.UPDATE, sex, age, TIME_PERIOD, OBS_FLAG, freq, unit, indic_wb))
+relationship_satisfaction <- relationship_satisfaction %>% 
+            rename("edu_level" = "isced11",
+                   "country" = "geo",
+                  "relationship_sat_rating" = "OBS_VALUE")
+
+## Merge the tables together ##
+df_list <- list(job_satisfaction, life_satisfaction, employment_rate, relationship_satisfaction)
+
+df2 <- df_list %>% reduce(full_join, by = c("country", "edu_level"))
+ 
+df2 <- df2 %>% 
+# Mutate the education level column 
+  mutate(
+    edu_level = case_when(
+    # Less than primary, primary and lower secondary education (levels 0-2)
+    edu_level == "ED0-2"  ~ 1, 
+    # Upper secondary and post-secondary non-tertiary education (levels 3 and 4)
+    edu_level == "ED3_4" ~ 2,
+    # Tertiary education (levels 5-8)
+    edu_level == "ED5-8" ~ 3 
+    ))
+
+
+# Remove unnecessary data
+rm(employment_rate, job_satisfaction, life_satisfaction, relationship_satisfaction, df_list)
+
+# Remove the rows with missing values
+df2 <- na.omit(df2)
+
+```
+
+
+## Descriptive statistics
+```{r, echo=FALSE , warning=FALSE , message=FALSE}
+# Datasummary
+Missing <- name <- function(x) {sum(is.na(x))}
+P95 <- function(x){quantile(x,0.95,na.rm=T)}
+P05 <- function(x){quantile(x,0.05,na.rm=T)}
+Range <- function(x){max(x, na.rm = T) - min(x, na.rm = T)}
+
+datasummary(  (`Life satisfaction (rating)` = life_sat_rating) +
+              (`Employment rate (%)` = employment_rate_pct) +
+              (`Job satisfaction (rating)` = job_sat_rating) +
+              (`Relationship satisfaction (rating)` = relationship_sat_rating) ~ 
+              N + Missing + Mean + Median + SD + Min + Max + Range + P05 + P95 ,
+              data = df2 ,
+              fmt = 1 ,
+              title = 'Descriptive statistics') %>% 
+              kable_styling(latex_options = c("HOLD_position","scale_down" ))
+
+```
+The table summarises the main characteristics of the output and explanatory variables. Life satisfaction, job satisfaction and relationship satisfaction are rated from 1 to 10 and employment rate is expressed as a percentage of the population. The average life satisfaction rating is 7.4, with a difference of 4 points between the minimum and maximum rating. For each measure, we have 105 observations with 0 missing values. In the appendix, I have created a detailed version of the descriptive statistics, where measurements are broken down by educational attainment.
+
+There are three different education levels in the dataset: 
+
+- Less than primary, primary and lower secondary education (ISCED levels 0-2), referred to as primary in the visualizations.
+
+- Upper secondary and post-secondary non-tertiary education (ISCED levels 3 and 4), referred to as secondary in the visualizations.
+
+- Tertiary education (ISCED levels 5-8), referred to as tertiary in the visualizations.
+
+```{r, echo=FALSE , warning=FALSE , message=FALSE, fig.width=8, fig.height = 3, fig.align="center"}
+
+# Filter out the employment rate to the primary education level
+primary_employment_rate <- df2 %>% select(edu_level, employment_rate_pct ) %>% filter(edu_level %in% c("1"))
+
+# Based on education level what is the life satisfaction rating
+gp1 <- df2 %>%   
+  ggplot() +
+  geom_jitter(aes(x = as.factor(edu_level), y = life_sat_rating), width = 0.15, color = "skyblue4", size = 1)+
+  geom_crossbar(data = df2 %>% group_by(edu_level) %>% dplyr::summarize( avg = mean(life_sat_rating)), aes(x = as.factor(edu_level), y = avg, ymin = avg, ymax = avg), size=0.5,col="orangered1", width = 0.35) +
+  theme_bw() +
+    scale_y_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+    labs(y = 'Life satisfaction rating',x = 'Education levels') +
+  ggtitle(paste0('Life satisfaction based on education level')) +
+    theme(plot.title = element_text(hjust = 0.5 , size=14)) +
+    theme(axis.text.x = element_text(size = 12)) + 
+    theme(axis.title.y = element_text(size = 12)) +
+    scale_x_discrete(labels = c("1" = "Primary", "2" = "Secondary", "3" = "Tertiary"))
+
+grid.arrange(grobs=list(gp1), ncol = 1)
+
+```
+
+The first graph shows satisfaction with life at each level of education. We can see that the values range from 4.3 to 8 for primary education, from 5.4 to 8.1 for secondary education and from 6.1 to 8.3 for tertiary education. The higher the education level, the smaller the variance of the values. The graph shows an upward trend, meaning that on average the higher the level of education, the higher the satisfaction with life. In the appendix I also visualized the job satisfaction, relationship satisfaction and the employment rate in the different education levels, the results of which show a similar increasing trend. This suggests that there is indeed a correlation between education levels and life satisfaction.
+
+```{r, echo=FALSE , warning=FALSE , message=FALSE, fig.width=8, fig.height = 3, fig.align="center"}
+# Top 5 Country where employment rate is the lowest in the basic education level
+low_employment <- df2 %>% distinct(employment_rate_pct, edu_level, country) %>% filter(edu_level %in% c("1")) %>% top_n(-5)
+
+gp2 <- ggplot(low_employment , aes(x = reorder(country, -employment_rate_pct) , y = employment_rate_pct)) + 
+  geom_bar(stat="identity" ,  fill = 'skyblue4') +
+  geom_segment(data = df2, aes(x = 0.5, xend = 5.5, y = mean(primary_employment_rate$employment_rate_pct)
+                                   , yend = mean(primary_employment_rate$employment_rate_pct)) , color = "orangered1") + 
+  geom_label(aes(x = 1, y = mean(primary_employment_rate$employment_rate_pct) + 5), 
+           label = "Average employment rate" ,
+           size = 2.75, color = 'orangered1', fill = "white") +
+  labs(y = 'Employment rate (%)',x = 'Country') +
+  scale_y_continuous(limits = c(0,100) , 
+                     breaks = seq(0, 100, by=10)) +
+  ggtitle(paste0('Lowest employment rate in the primary education level')) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5 , size=14)) +
+  theme(axis.text.x = element_text(size = 12)) + 
+  theme(axis.title.y = element_text(size = 12)) +
+  scale_x_discrete(labels = c("ME" = "Montenegro", "LT" = "Lithuania", "HR" = "Croatia", "PL"= "Poland", "SK" = "Slovakia"))
+
+grid.arrange(grobs=list(gp2),
+          ncol = 1)
+```
+For the primary education level I wanted to find an explanation for the life satisfaction variance, so I also examined this level of education by employment rate. The second graph shows, in descending order, the countries with the lowest employment rates in primary education. The graph shows that the average employment rate at this particular level of education in european countries is close to 36.45%, which means nearly 2/3 of people are unemployed or works in undeclared work. This rate is significantly higher in the secondary and tertiary education level where the values are 64.05% and 78.64%. Slovakia has the lowest employment rate, which is exactly 18% and in this case Montenegro has the highest with 21.2%. The values of the five countries with the lowest employment rates are very close to each other, yet far from the average.
+
+## Models
+```{r, echo=FALSE , warning=FALSE , message=FALSE}
+reg1 <- feols(data = df2, life_sat_rating ~ as.factor(edu_level), vcov = "hetero")
+reg2 <- feols(data = df2, life_sat_rating ~ as.factor(edu_level) + job_sat_rating, vcov = "hetero")
+reg3 <- feols(data = df2, life_sat_rating ~ as.factor(edu_level) + job_sat_rating + employment_rate_pct, vcov = "hetero")
+reg4 <- feols(data = df2, life_sat_rating ~ as.factor(edu_level) + job_sat_rating + relationship_sat_rating, vcov = "hetero")
+
+varname_report <- c("(Intercept)" = "Intercept",
+                   "as.factor(edu_level)2" = "Secondary education level",
+                   "as.factor(edu_level)3" = "Tertiary education level",
+                   "employment_rate_pct" = "Employment rate (%)",
+                   "job_sat_rating" = "Job satisfaction (rating)",
+                   "relationship_sat_rating" = "Relationship satisfaction (rating)")
+
+
+modelsummary(list("(1)" = reg1,"(2)" = reg2,"(3)" = reg3,"(4)" = reg4),
+         fmt="%.2f",
+         gof_omit = 'DF|Deviance|Log.Lik.|F|AIC|BIC|R2 Within|R2 Pseudo|Std.Errors',
+         stars=TRUE,
+         estimate = "{estimate}{stars} ", 
+         statistic = "std.error",
+         coef_rename = varname_report,
+         title = "Regression models to uncover relationship between education levels and life satisfaction") %>% 
+        kable_styling(latex_options = c("HOLD_position","scale_down", font_size = 7))
+```
+
+Based on the results of **Model 1**, if we exclude the control variables, we see that having a primary education would mean an average life satisfaction score of 6.69, a secondary education would increase it by 0.48, and a tertiary education would mean that our life satisfaction would increase by 0.95 rating compared to primary education level. From **Model 2** we can see that if job satisfaction is on average 1 rating higher, then life satisfaction ratings are on average 1.02 rating higher. From **Model 3** we see that the employment rate is not significant. The first model already explains about 20% of the total variation of the life satisfaction. If we include job satisfaction in the model, we see that it increases to 80%, so it is indeed an important predictor of life satisfaction. In the third and fourth regressions I added additional variables, from which we can see that relationship satisfaction also seems to be an important predictor. We also have a very low RMSE value for each model which indicates that we have models with fairly low error values (RMSE is useful since it has a squared term which indicates that large errors will be squared, and thus it would highly effect our RMSE value).
+
+## Conclusion
+
+To my question whether life satisfaction is only a matter of educational attainment and the standard of living it generates, the answer is that it is not solely but significantly influenced. Although all of the variables I examined showed significant differences between educational attainment levels. Most importantly, job satisfaction and relationship satisfaction influence the happiness level of people at each educational level. We cannot conclude that a higher level of education will pre-determine future happiness, as we do not have access to all the relevant measures, such as the average earnings for each level of education. Nevertheless, the results confirm that, on average, higher educational attainment provides more opportunities.
+
+
+\newpage
+## Appendix
+
+### Descriptive statistics by education level
+```{r, echo=FALSE , warning=FALSE , message=FALSE}
+datasummary(  ( Heading("Education level") * 
+              ( recode_factor( edu_level, `1` = "Primary", `2` = "Secondary", `3` = "Tertiary") )  * Heading("Variable") * (
+              (`Life satisfaction (rating)` = life_sat_rating) +
+              (`Employment rate (%)` = employment_rate_pct) +
+              (`Job satisfaction (rating)` = job_sat_rating) +
+              (`Relationship satisfaction (rating)` = relationship_sat_rating))) ~ 
+    N + Missing + Mean + Median + SD + Min + Max + Range + P05 + P95,
+  data = df2) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position", font_size = 8)
+```
+
+### Loess smooth for each variable
+```{r, echo=FALSE , warning=FALSE , message=FALSE, fig.width=14, fig.height = 9, fig.align="center"}
+###### Plot based on Employment rate ######
+# Check the loess method
+gp3 <- ggplot(df2, aes(x = employment_rate_pct, y = life_sat_rating)) +
+  geom_smooth(method = 'loess')+
+   scale_y_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+  scale_x_continuous(limits = c(0,100) , 
+                     breaks = seq(0, 100, by=20)) +
+  labs(y = 'Life satisfaction (rating)',x = 'Employment rate (%)') +
+  geom_point()
+
+###### Plot based on job satisfaction ######
+# Check the loess method
+gp4 <- ggplot(df2, aes(x = job_sat_rating, y = life_sat_rating)) +
+  geom_smooth(method = 'loess')+
+   scale_y_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+  scale_x_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+  labs(y = 'Life satisfaction (rating)',x = 'Job satisfaction (rating)') +
+  geom_point()
+###### Plot based on relationship satisfaction ######
+# Check the loess method
+gp5 <- ggplot(df2, aes(x = relationship_sat_rating, y = life_sat_rating)) +
+  geom_smooth(method = 'loess')+
+   scale_y_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+  scale_x_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+  labs(y = 'Life satisfaction (rating)',x = 'Relationship satisfaction (rating)') +
+  geom_point()
+
+grid.arrange(grobs = list(gp3,gp4, gp5),
+             ncol=2)
+
+
+```
+
+### Distribution of values across variables based on educational attainment
+```{r, echo=FALSE , warning=FALSE , message=FALSE, fig.width=8, fig.height = 6, fig.align="center"}
+gp9 <- df2 %>%   
+  ggplot() +
+  geom_jitter(aes(x = as.factor(edu_level), y = job_sat_rating), width = 0.15, color = "skyblue4", size = 1)+
+  geom_crossbar(data = df2 %>% group_by(edu_level) %>% dplyr::summarize( avg = mean(job_sat_rating)), aes(x = as.factor(edu_level), y = avg, ymin = avg, ymax = avg), size=0.5,col="orangered1", width = 0.35) +
+  theme_bw() +
+    scale_y_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+    labs(y = 'Job satisfaction rating',x = 'Education levels') +
+  ggtitle(paste0('Job satisfaction based on education level')) +
+    theme(plot.title = element_text(hjust = 0.5 , size=9)) +
+    theme(axis.text.x = element_text(size = 7)) +
+    theme(axis.title.x = element_text(size = 8)) +
+    theme(axis.title.y = element_text(size = 8)) +
+    scale_x_discrete(labels = c("1" = "Primary", "2" = "Secondary", "3" = "Tertiary"))
+
+
+gp10 <- df2 %>%   
+  ggplot() +
+  geom_jitter(aes(x = as.factor(edu_level), y = relationship_sat_rating), width = 0.15, color = "skyblue4", size = 1)+
+  geom_crossbar(data = df2 %>% group_by(edu_level) %>% dplyr::summarize( avg = mean(relationship_sat_rating)), aes(x = as.factor(edu_level), y = avg, ymin = avg, ymax = avg), size=0.5,col="orangered1", width = 0.35) +
+  theme_bw() +
+    scale_y_continuous(limits = c(0,10) , 
+                     breaks = seq(0, 10, by=2)) +
+    labs(y = 'Relationship satisfaction rating',x = 'Education levels') +
+  ggtitle(paste0('Relationship satisfaction based on education level')) +
+    theme(plot.title = element_text(hjust = 0.5 , size=9)) +
+    theme(axis.text.x = element_text(size = 7)) +
+    theme(axis.title.x = element_text(size = 8)) +
+    theme(axis.title.y = element_text(size = 8)) +
+    scale_x_discrete(labels = c("1" = "Primary", "2" = "Secondary", "3" = "Tertiary"))
+
+gp11 <- df2 %>%   
+  ggplot() +
+  geom_jitter(aes(x = as.factor(edu_level), y = employment_rate_pct), width = 0.15, color = "skyblue4", size = 1)+
+  geom_crossbar(data = df2 %>% group_by(edu_level) %>% dplyr::summarize( avg = mean(employment_rate_pct)), aes(x = as.factor(edu_level), y = avg, ymin = avg, ymax = avg), size=0.5,col="orangered1", width = 0.35) +
+  theme_bw() +
+    scale_y_continuous(limits = c(0,100) , 
+                     breaks = seq(0, 100, by=20)) +
+    labs(y = 'Employment rate (%)',x = 'Education levels') +
+  ggtitle(paste0('Employment rate based on education level')) +
+    theme(plot.title = element_text(hjust = 0.5 , size=9)) +
+    theme(axis.text.x = element_text(size = 7)) +
+    theme(axis.title.x = element_text(size = 8)) +
+    theme(axis.title.y = element_text(size = 8)) +
+    scale_x_discrete(labels = c("1" = "Primary", "2" = "Secondary", "3" = "Tertiary"))
+
+grid.arrange(grobs = list(gp9, gp10, gp11),
+             ncol=2)
+```
+
+
+
+
+
