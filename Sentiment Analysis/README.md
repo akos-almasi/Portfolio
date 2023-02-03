@@ -151,5 +151,5 @@ My primary assumption is that article headlines are mostly negative or neutral a
 
 To evaluate my second hypothesis, which is to find a correlation between article titles and clicks, we need to look at more data, in this case a much larger database. Although I only looked at 60 articles, you can see that AWS allows us to do a full analysis.
 
-If you want to check out the final script click here[https://gist.github.com/akos-almasi/4029f2825b07fe3fa166742d6ceb525b].
+If you want to check out the final script click [here](https://gist.github.com/akos-almasi/4029f2825b07fe3fa166742d6ceb525b).
 
