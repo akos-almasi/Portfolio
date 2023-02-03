@@ -1,0 +1,322 @@
+---
+title: "Final project web scraping"
+author: "Akos"
+date: "2022-12-27"
+output:
+  prettydoc::html_pretty:
+    theme: architect
+  html_document:
+    df_print: paged
+---
+
+## Web scraping
+#### Libraries used for the project
+```{r, warning=FALSE, message=FALSE}
+library(rvest)
+library(httr)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(stringr)
+```
+
+#### Function to receive data from one house
+```{r, eval=FALSE, warning=FALSE}
+# URL of one house
+url <- "https://realestatehungary.hu/ii-ker/elado+lakas/tegla-epitesu-lakas/33085768"
+# Create an empty list
+t_list <- list()
+# Read html of a house
+t <- read_html(url)
+# Function
+get_one_house <- function(url) {
+  #Sys.sleep(30)
+  t_list <- list()
+  t <- read_html(url)
+  t_list[["price"]]<- t %>% html_nodes('.text-nowrap span') %>% html_text()
+  t_list[["area_sqm"]] <- t %>% html_nodes('.border-end .fs-5') %>% html_text()
+  t_list[["room_count"]] <- t %>% html_nodes('.border-end+ .font-family-secondary .fs-5') %>% html_text()
+  # Get the keys
+  keys <- t %>% html_nodes('.ps-0:nth-child(1)') %>% html_text()
+  keys <- trimws(keys)
+  # Remove the first 5 since they are error messages
+  keys <-  keys[-c(1,2, 49,50)]
+  # Get the values
+  values <- t %>% html_nodes(".fw-bold.ps-0") %>% html_text()
+  values <- trimws(values)
+  
+  if (length(keys)==length(values)) {
+    for (i in 1:length(keys)) {
+      t_list[[keys[i]]] <- values[i]
+    }
+  }
+  return(t_list)
+}
+
+# Check the function
+t <- get_one_house("https://realestatehungary.hu/ii-ker/elado+lakas/tegla-epitesu-lakas/33085768")
+```
+
+#### get the link for one page
+```{r, eval=FALSE, warning=FALSE}
+get_one_page_link  <- function(url) {
+  t <- read_html(url)
+  all_link <- paste0("https://realestatehungary.hu", t %>% html_nodes('.listing__link') %>% html_attr('href'))
+  house_link <- all_link[startsWith(all_link, 'https://realestatehungary.hu/ii-ker/elado+lakas/tegla-epitesu-lakas/')]
+  return(house_link)
+}
+# Try the function
+get_one_page_link("https://realestatehungary.hu/lista/elado+lakas+ii-ker?page=4")
+```
+
+```{r, eval=FALSE, warning=FALSE}
+# The links for 40 pages
+pages_for_link  <- paste0('https://realestatehungary.hu/lista/elado+lakas+ii-ker?page=', 1:40)
+
+# All the house links for the first 40 pages
+house_links <- sapply(pages_for_link,get_one_page_link)
+
+# unlist
+all_links <- as.character(unlist(house_links))
+```
+
+#### Save the data into lists, combine them and create a dataframe
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
+# Save the data into lists
+data_list1 <- lapply(all_links[1:50], get_one_house)
+data_list2 <- lapply(all_links[51:100], get_one_house)
+data_list3 <- lapply(all_links[101:150], get_one_house)
+data_list4 <- lapply(all_links[151:200], get_one_house)
+data_list5 <- lapply(all_links[201:250], get_one_house)
+data_list6 <- lapply(all_links[251:300], get_one_house)
+data_list7 <- lapply(all_links[301:350], get_one_house)
+data_list8 <- lapply(all_links[351:400], get_one_house)
+data_list9 <- lapply(all_links[401:450], get_one_house)
+data_list10 <- lapply(all_links[451:500], get_one_house)
+data_list11 <- lapply(all_links[501:550], get_one_house)
+data_list12 <- lapply(all_links[551:600], get_one_house)
+data_list13 <- lapply(all_links[601:650], get_one_house)
+data_list14 <- lapply(all_links[651:700], get_one_house)
+data_list15 <- lapply(all_links[701:750], get_one_house)
+data_list16 <- lapply(all_links[751:771], get_one_house)
+# combine together the lists
+final_list <- c(data_list1,data_list2,data_list3, data_list4, data_list5,
+                data_list6, data_list7, data_list8, data_list9, data_list10, data_list11, data_list12, data_list13,
+                data_list14,data_list15,data_list16)
+# create a data frame from our list
+df <- rbindlist(final_list, fill = T)
+# Save the data
+saveRDS(df, file = "data.rds")
+```
+#### Or we can save the htmls and work with them instead
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
+# save HTML files
+i <- "https://realestatehungary.hu/ii-ker/elado+lakas/tegla-epitesu-lakas/33258083"
+tail(strsplit(i, "/")[[1]], 1)
+
+# Save html files into data folder
+for (i in all_links) {
+  
+  download.file(i, destfile = paste0("/Users/akosalmasi/Desktop/CEU/Subjects/Web_scraping/Data/", 
+                                     tail(strsplit(i, "/")[[1]], 1),".html"))
+}
+
+asd <- list.files("/Users/akosalmasi/Desktop/CEU/Subjects/Web_scraping/Data/", full.names = T)
+```
+
+
+#### Read the data
+```{r,warning=FALSE, message=FALSE}
+x2 <- readRDS(file = "data.rds")
+```
+
+## Data cleaning
+
+#### area_sqm column
+```{r,warning=FALSE, message=FALSE}
+# Change it to numeric and remove m2 from the column
+x2$area_sqm <- as.numeric(gsub("m2", "", x2$area_sqm))
+```
+
+#### price column
+```{r,warning=FALSE, message=FALSE}
+# Include only the ones that are in HUF
+x2 <- x2 %>% filter(str_detect(price, ("million HUF")))
+# remove million HUF from the column and rename it
+x2$price_million_HUF <- gsub("million HUF", "", x2$price)
+# change , to .
+x2$price_million_HUF <- gsub(",", ".", x2$price_million_HUF)
+# Change the column to numeric
+x2$price_million_HUF <- as.numeric(x2$price_million_HUF)
+# remove price column
+x2 <- x2[,-1]
+```
+
+#### Balcony size column 
+```{r,warning=FALSE, message=FALSE}
+# Change it to numeric and remove m2
+x2$balcony_m2 <- as.numeric(gsub("m2", "", x2$`Balcony size`))
+# Remove the original column
+x2 <- x2[,-15]
+```
+
+#### Drop empty columns
+```{r,warning=FALSE, message=FALSE}
+x2 <- x2 %>% select(-c(`error
+            
+    
+        Connection error - we could not send the message. Please try again later.`, `check
+            
+    
+        Your email was sent to the advertiser.`))
+```
+
+#### Condition of the real estate column 
+```{r,warning=FALSE, message=FALSE}
+# change not provided to NA
+x2$`Condition of the real estate`[x2$`Condition of the real estate` == "not provided"] <- as.numeric(NA)
+```
+
+#### Building levels column
+```{r,warning=FALSE, message=FALSE, echo=TRUE, results='hide'}
+# Change not provided Building levels to NA
+x2$`Building levels`[x2$`Building levels` == "not provided"] <- as.numeric(NA)
+# Change the single-floor to 1
+x2$`Building levels`[x2$`Building levels` == "single-floor"] <- 1
+# Change it to integer
+as.integer(x2$`Building levels`)
+```
+
+#### Orientation column
+```{r}
+x2$`Orientation`[x2$`Orientation` == "not provided"] <- as.numeric(NA)
+```
+
+#### Create a new price column that is in HUF
+```{r}
+x2$price_HUF <- x2$price_million_HUF * 1000000
+```
+
+#### Create a new column for price/square meter
+```{r}
+x2$price_per_sqm <- x2$price_HUF / x2$area_sqm
+```
+
+#### Create a new column for price categories
+```{r}
+x2 <- x2 %>% 
+  mutate(
+    # Price categories
+    price_category = case_when(
+      price_HUF <= 70000000 ~ "cheap", 
+      price_HUF >70000000 & price_HUF <= 120000000 ~ "average",
+      price_HUF > 120000000 & price_HUF <= 250000000 ~ "expensive",
+      price_HUF > 250000000 ~ "luxurious"
+    ))
+```
+
+
+## Visualizations
+
+#### The price difference between the most expensive and the cheapest real estate
+```{r,message=FALSE, warning=FALSE, fig.width=10, fig.height = 6, fig.align="center"}
+# Most expensive real estates
+expensive <- x2 %>% distinct(price_million_HUF) %>% top_n(3)
+# Least expensive real estates
+cheap <- x2 %>% distinct(price_million_HUF) %>% top_n(-3)
+# Combine the two dataframes
+together <- rbind(cheap, expensive)
+# Create an ID column
+together <- tibble::rowid_to_column(together, "ID")
+
+ggplot(together , aes(x = reorder(ID, -price_million_HUF) , y = price_million_HUF)) + 
+  geom_bar(stat="identity" ,  fill = 'skyblue4') +
+  geom_segment(data = x2, aes(x = 0.5, xend = 6.5, y = mean(x2$price_million_HUF)
+                               , yend = mean(x2$price_million_HUF)) , color = "orangered1") + 
+  geom_label(aes(x = 1, y = mean(x2$price_million_HUF) + 25), 
+             label = "Average price" ,
+             size = 3.75, color = 'orangered1', fill = "white") +
+  labs(y = 'Price in million HUF',x = 'Real estates') +
+  scale_y_continuous(limits = c(0,800) , 
+                     breaks = seq(0, 800, by=100)) +
+  ggtitle(paste0('The price difference between the 3 most expensive and the 3 cheapest real estates')) +
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5 , size=14)) +
+    theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+```
+
+#### Average price/ square meter
+```{r,warning=FALSE, fig.width=10, fig.height = 6, fig.align="center"}
+x2 %>%   
+  ggplot() +
+  geom_jitter(aes(x = as.factor(price_category), y = price_per_sqm), width = 0.25, color = "skyblue4", size = 1)+
+  geom_crossbar(data = x2 %>% group_by(price_category) %>% dplyr::summarize( avg = mean(price_per_sqm)), aes(x = as.factor(price_category), y = avg, ymin = avg, ymax = avg), size=0.5,col="orangered1", width = 0.55) +
+  theme_bw() +
+    scale_y_continuous(limits = c(0,8500000) , 
+                     breaks = seq(0, 8500000, by=500000)) +
+  labs(y ='Price/square meter (HUF)',x = 'Price category') +
+  ggtitle(paste0('Information on the price/ square meter based on the price category of the real estate')) +
+  theme(plot.title = element_text(hjust = 0.5 , size=14)) +
+  theme(axis.text.x = element_text(vjust= 1, hjust= 0.8, angle = 20)) +
+  scale_x_discrete(limits = c("cheap", "average", "expensive", "luxurious"))
+
+```
+
+#### Correlation between price and area 
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height = 6, fig.align="center"}
+ggplot(x2, aes(x = area_sqm, y = price_million_HUF)) +
+  geom_smooth(method = 'lm') +
+  labs(y = 'Price (million HUF)',x = 'Area (square meter)') +
+  geom_point() +
+  theme_bw()
+```
+
+#### How much money you can ask on average based on the condition of your real estate
+```{r,warning=FALSE, fig.width=10, fig.height = 6, fig.align="center"}
+x2 %>%   
+  ggplot() +
+  geom_jitter(aes(x = as.factor(`Condition of the real estate`), y = price_million_HUF), width = 0.25, color = "skyblue4", size = 1)+
+  geom_crossbar(data = x2 %>% group_by(`Condition of the real estate`) %>% dplyr::summarize( avg = mean(price_million_HUF)), aes(x = as.factor(`Condition of the real estate`), y = avg, ymin = avg, ymax = avg), size=0.5,col="orangered1", width = 0.55) +
+  theme_bw() +
+  scale_y_continuous(limits = c(0,800) , 
+                     breaks = seq(0, 880, by=100)) +
+  labs(y ='Price in million HUF',x = 'Condition of real estate') +
+  ggtitle(paste0('Information on the price based on the condition of the real estate')) +
+  theme(plot.title = element_text(hjust = 0.5 , size=14)) +
+  theme(axis.text.x = element_text(vjust= 1, hjust= 0.8, angle = 20))
+```
+
+#### How much money you can ask on average based on the orientation of your real estate
+```{r,warning=FALSE, fig.width=10, fig.height = 6, fig.align="center"}
+
+x2 %>%   
+  ggplot() +
+  geom_jitter(aes(x = as.factor(`Orientation`), y = price_million_HUF), width = 0.25, color = "skyblue4", size = 1)+
+  geom_crossbar(data = x2 %>% group_by(`Orientation`) %>% dplyr::summarize( avg = mean(price_million_HUF)), aes(x = as.factor(`Orientation`), y = avg, ymin = avg, ymax = avg), size=0.5,col="orangered1", width = 0.35) +
+  theme_bw() +
+  scale_y_continuous(limits = c(0,800) , 
+                     breaks = seq(0, 800, by=100)) +
+  labs(y ='Price in million HUF',x = 'Orientation') +
+  ggtitle(paste0('Information on the price based on the orientation of the real estate')) +
+  theme(plot.title = element_text(hjust = 0.5 , size=14)) +
+  theme(axis.text.x = element_text(vjust= 1, hjust= 0.8, angle = 20))
+
+```
+
+#### Real estate price difference on average if you have an elevator or not
+```{r,message=FALSE, warning=FALSE, fig.width=10, fig.height = 6, fig.align="center"}
+# Check the average price if we have an elevator or not
+elevator_matters <- x2 %>% group_by(Lift) %>% summarise(average_price_million_HUF = mean(price_million_HUF))
+# Keep the ones where we have information about the elevator
+elevator_matters <- elevator_matters[-c(2,4),]
+
+ggplot(data = elevator_matters, aes(x = reorder(Lift, -average_price_million_HUF), y = average_price_million_HUF))+
+  geom_bar(stat = "identity", fill = 'skyblue4', width = 0.4) +
+    labs(y = 'Average price in million HUF',x = 'Elevator') +
+    scale_y_continuous(limits = c(0,160) , 
+                     breaks = seq(0, 160, by=20)) +
+  theme_bw()
+
+```
