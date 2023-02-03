@@ -1,4 +1,4 @@
-# Data Engineering Term 1
+# Data Engineering SQL project
 
 A quick overview what I did in the Term 1 project.
 
