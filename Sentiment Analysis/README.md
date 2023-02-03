@@ -126,6 +126,30 @@ ggplot(all_sentiment, aes(y = Positive, x = Negative, color = Article)) +
   theme_minimal()
 ```
 
+![image](https://user-images.githubusercontent.com/113236007/216650563-4b40d9a5-bb78-4683-b812-ec6c065bf066.png)
 
 
+From this we can see that, overall, the most positive articles are from the Origo site, while the other news sites tend to give their articles neutral or negative sentiment.
+
+I also used the detect_entities function to identify what kind of entities are in the texts. With this function anyone can isolate people, organisation, location, date etc. from a text. I decided to group certain entities because I wanted to see which operators appear most often.
+
+```
+all_entities <- NULL
+for (i in 1:length(all_translated_titles)) {
+  all_entities <- rbind(all_entities, 
+                         detect_entities(all_translated_titles[i]))
+}
+
+```
+
+![image](https://user-images.githubusercontent.com/113236007/216650715-ceb0eef9-b5e1-4418-9e7a-fbbd5e8bf67d.png)
+
+
+## Conclusion ##
+
+My primary assumption is that article headlines are mostly negative or neutral and furthermore the entities demonstrated that most of the articles about the North Stream were written in a way that associated it with the Russians.
+
+To evaluate my second hypothesis, which is to find a correlation between article titles and clicks, we need to look at more data, in this case a much larger database. Although I only looked at 60 articles, you can see that AWS allows us to do a full analysis.
+
+If you want to check out the final script click here[https://gist.github.com/akos-almasi/4029f2825b07fe3fa166742d6ceb525b].
 
