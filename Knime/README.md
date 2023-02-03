@@ -1,4 +1,4 @@
-# Term Project DE2
+# Data Engineering Knime project
 ### Group members: ###
  - Shahana Ayobi
  - Alima Dzhanybaeva
