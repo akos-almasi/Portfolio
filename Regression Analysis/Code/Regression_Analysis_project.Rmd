@@ -1,5 +1,5 @@
 ---
-title: "DA2 Final Project"
+title: "Regression Analysis Project"
 author: "Akos Almasi"
 date: "2022-12-15"
 output:
