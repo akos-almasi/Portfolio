@@ -24,10 +24,10 @@ library(lspline)
 
 ```{r, echo=FALSE , warning=FALSE , message=FALSE}
 ### Read the csv files in a data.table format
-employment_rate <- data.table(read.csv("https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/employment_rate.csv"))
-job_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/job_satisfaction.csv'))
-relationship_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/relationship_satisfaction.csv'))
-life_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/DA2/main/Final%20project/life_satisfaction.csv'))
+employment_rate <- data.table(read.csv("https://raw.githubusercontent.com/akos-almasi/Portfolio/main/Regression%20Analysis/Data/employment_rate.csv"))
+job_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/Portfolio/main/Regression%20Analysis/Data/job_satisfaction.csv'))
+relationship_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/Portfolio/main/Regression%20Analysis/Data/relationship_satisfaction.csv'))
+life_satisfaction <- data.table(read.csv('https://raw.githubusercontent.com/akos-almasi/Portfolio/main/Regression%20Analysis/Data/life_satisfaction.csv'))
 ```
 
 ## Introduction
