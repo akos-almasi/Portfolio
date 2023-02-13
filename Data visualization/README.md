@@ -62,3 +62,4 @@ In my project, I presented the trends of Formula 1 in recent years and looked fo
 In terms of likeability the graphs showed, Formula 1 is extremely versatile: it is both a team and an individual sport, it is both a race and a season, and it can be both local and international.
 </p>
 
+If you are interested in the coding part, please click [here](https://github.com/akos-almasi/Portfolio/blob/main/Data%20visualization/Code/DV2_Final_project.Rmd).
