@@ -7,9 +7,9 @@ In the Data Visualization project, I used the data available on Formula 1 to ill
 ## Visualization 1
 
 First I looked at the location and frequency of the races. As an international competition, it is no coincidence that every continent (except Antarctica) has at least one location where races are held continuously. This is not only useful for promoting the sport (people are more easily connected to events/sports that are nearby at the location level), but also has a big impact on the quality of the tracks and races with different weather conditions. Formula 1 has a strong European focus, which makes it easier to transport equipment, and it can also be said that races organised on different continents are held in relatively close locations to each other. Although the likability of the sport is not determined by location, the fact that fans can attend the races in person “wherever” they live in the world (near the specified locations) brings the event closer to them.
-
+<p align="center">
 <img width="840" alt="Screenshot 2023-02-13 at 11 29 46" src="https://user-images.githubusercontent.com/113236007/218434109-ef900884-90c1-4fd3-9840-fdd46ef3c21f.png">
-
+</p>
 ## Visualization 2
 
 The appeal of the competition for me is that, on the one hand, while we are talking about a complex team sport, we also see easily measurable individual performances in the races. For example, Lewis Hamilton, without Mercedes, would probably not be considered one of the most talented drivers ever, yet the fact that he is not only one of the drivers with the most races, but also the one with the highest win rate (35.4%) is indisputable. The graph also shows since the beginning of Formula 1 (there have been a lot of drivers throughout the years, to be exact 853), there is already a huge gap in the number of races won between the top 10 most successful drivers. This is likely to be due to the fact that over the years, as interest has grown and the sport has developed structurally, more and more races have been organised in one year.
