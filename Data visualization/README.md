@@ -25,7 +25,7 @@ The appeal of the competition for me is that, on the one hand, while we are talk
 The beauty of Formula 1 is that winning a race is not the end of the competition, because drivers have to keep doing well throughout the season. In my next graph you can see the intense rivalry between Fernando Alonso and rookie teammate Lewis Hamilton and Ferrari’s driver Kimi Raikonnen in 2007. With two races to go Hamilton was on the doorstep of winning the championship, but an unexpected crash at the Chinese Grand Prix - where he slid off into the gravel by the pit entry lane - kept the championship alive. In the Brazilian final he suffered another misfortune when a gearbox problem dropped him to the back of the grid. Raikkonen needed to win and hope that Alonso finished no higher than third, Hamilton could only recover to seventh place; two positions short of what he needed to win the title. Although during the season it seemed that Raikonnen was the least likely to win the championship, he ended up being the champion.
 
 <p align="center">
-  ![animation]([https://user-images.githubusercontent.com/113236007/218439037-11343b83-5465-4f7f-85f4-4aeb348ac842.gif](https://github.com/akos-almasi/Portfolio/blob/main/Data%20visualization/visualizations/animation.gif)
+![animation](https://github.com/akos-almasi/Portfolio/blob/main/Data%20visualization/visualizations/animation.gif)
 </p>
 
 ## Visualization 4
