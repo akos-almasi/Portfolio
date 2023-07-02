@@ -2,7 +2,7 @@
 
 ### Introduction ###
 
-In the EU in 2020, around 40% of 30-35 year olds will have completed tertiary education. Higher educational attainment leads to better job prospects and higher wages, which can enable people to consume more and better quality goods and services. These conditions suggest that a happier life can be achieved. But the 40% suggests that more than half of this age group do not have the same opportunities as graduates. This report aims to find out if this is true and to analyse the impact of educational attainment on life satisfaction in the EU. My question: Is life satisfaction only a matter of educational attainment and the standard of living it generates? Will we be unhappy if we don’t learn?
+In the EU in 2020, around 40% of 30-35 year olds will have completed tertiary education. Higher educational attainment leads to better job prospects and higher wages, which can enable people to consume more and better quality goods and services. These conditions suggest that a happier life can be achieved. But the 40% suggests that more than half of this age group do not have the same opportunities as degree holders. This report aims to find out if this is true and to analyse the impact of educational attainment on life satisfaction in the EU. My question: Is life satisfaction only a matter of educational attainment and the standard of living it generates? Will we be unhappy if we don’t learn?
 
 ### Data ###
 
